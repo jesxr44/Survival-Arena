@@ -7,55 +7,78 @@ public class CharacterJump : MonoBehaviour
 {
     private CharacterController characterController;
 
-    private Vector2 playerVelocity;
     private bool isGrounded = false;
+    [SerializeField]
     private float jumpHeight = 5.0f;
     private bool jumpPressed = false;
+    private bool isJumping = false;
+    [SerializeField]
+    private float jumpTime;
+    private float jumpTimeCounter;
+
+
+    [SerializeField]
     private float gravity = -9.81f;
+
+    [SerializeField]
+    private Transform groundCheck;
+    [SerializeField]
+    LayerMask groundLayer;
+    private Vector3 velocity;
 
     void Awake()
     {
         characterController = GetComponent<CharacterController>();
     }
-    // Start is called before the first frame update
-    void Start()
+
+    void Update()
     {
-
-    }
-
-    void Update() {
-        //MovementJump();
-    }
-
-    private void MovementJump()
-    {
-        isGrounded = characterController.isGrounded;
-        if (isGrounded)
+        isGrounded = Physics.CheckSphere(groundCheck.position, 0.1f, groundLayer);
+        if (isGrounded && velocity.y <= 0)
         {
-            playerVelocity.y = 0.0f;
+            velocity.y = -2f;
         }
 
-        if (jumpPressed && isGrounded)
+        if (jumpPressed)
         {
-            playerVelocity.y += Mathf.Sqrt(jumpHeight * gravity * -1.0f);
+            if (isGrounded)
+            {
+                jumpTimeCounter = jumpTime;
+                //velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+                velocity.y = jumpHeight;
+            }
             jumpPressed = false;
         }
 
-        playerVelocity.y += gravity * Time.deltaTime;
-        characterController.Move(playerVelocity * Time.deltaTime);
+        if (isJumping)
+        {
+            if (jumpTimeCounter > 0)
+            {
+                velocity.y = jumpHeight;
+                jumpTimeCounter -= Time.deltaTime;
+            }
+            else
+            {
+                isJumping = false;
+            }
+        }
+
+        velocity.y += gravity * Time.deltaTime;
+        characterController.Move(velocity * Time.deltaTime);
     }
 
     public void Jump(InputAction.CallbackContext context)
     {
-
-        if (characterController.velocity.y == 0)
+        if (context.started)
         {
-            Debug.Log("Can jump");
+            Debug.Log("Jump");
             jumpPressed = true;
+            isJumping = true;
         }
-        else
+        if (context.canceled)
         {
-            Debug.Log("Can't jump");
+            Debug.Log("Jump Cancelled");
+            isJumping = false;
         }
     }
 }
